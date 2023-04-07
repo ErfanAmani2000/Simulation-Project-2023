@@ -4,6 +4,11 @@ import pandas as pd
 import numpy as np
 
 
+data = pd.ExcelFile('C:/Users/Lenovo/Dropbox/Research Project (Erfan & Alireza)/Simulation/weather probabilty.xlsx')
+rain_probability_df = data.parse(sheet_name=' Precipitation_probability')
+arrival_rate_df = data.parse(sheet_name='arrival_rate')
+
+
 class InsuranceCenterSimulation:
 
     def __init__(self, simulation_time):
@@ -14,13 +19,15 @@ class InsuranceCenterSimulation:
         self.future_event_list = list()
         self.data = dict()
         self.state = dict()
-        self.day_state = "Normal"
+        self.day_state = 1 # Normal
         self.clock = 0
         self.paired = 0
         self.trace_list = []
         self.param = {'arrival_time': 2, 'Waiting in Parking': 30, 'Capacity': 40, 'N1': 2, 'N2': 3, 'N3': 2, 'N4': 1,
-                      'LB': 5, 'M': 6, 'UB': 7, 'S2': 6, 'S3': 9, 'S4': 8, 'S6': 15, 'rain_probabilty': 0.1}
-        # triangular dist. is for opening case, and S2: Picturing, S3: Assessment, S4: Finishing case, S6: Compliant 
+                      'LB': 5, 'M': 6, 'UB': 7, 'S2': 6, 'S3': 9, 'S4': 8, 'S6': 15, 'rain_probability': 0.1}
+        # triangular dist. is for opening case, and S2: Picturing, S3: Assessment, S4: Finishing case, S6: Compliant
+
+
 
     def data_def(self):
         self.data['Cars'] = dict()
@@ -132,6 +139,8 @@ class InsuranceCenterSimulation:
         self.data['Cumulative Stats']['Area Under Server Busy time']['Assesser'] = 0
         self.data['Cumulative Stats']['Area Under Server Busy time']['Complaint'] = 0
 
+
+
     def starting_state(self):
         # State variables declaration
         self.state['Taking Picture Queue'] = 0
@@ -144,16 +153,19 @@ class InsuranceCenterSimulation:
         self.state['Outside the Area Queue'] = 0
         self.state['Picture Taker Server Status'] = 0
         self.state['Filer Server Status'] = 0
-        self.state['Assessor Server Status'] = 0
+        self.state['Assesser Server Status'] = 0
         self.state['Complaint Server Status'] = 0
 
         # Data: will save every essential data
         self.data_def()
 
         # FEL initialization, and Starting events that initialize the simulation
+        self.check_day_state()
         self.future_event_list.append({'Event Type': 'Car Entry Event', 'Event Time': 0, 'Car': [1, 0]})
         # number of car; guilty?
         return self.state, self.future_event_list, self.data
+
+
 
     @staticmethod
     def exponential(beta: float) -> float:
@@ -164,10 +176,14 @@ class InsuranceCenterSimulation:
         r = np.random.exponential(scale=beta)
         return r
 
+
+
     @staticmethod
     def triangular(LB: float, M: float, UB: float) -> float:
         r = np.random.triangular(left=LB, mode=M, right=UB)
         return r
+
+
 
     @staticmethod
     def uniform(a: float, b: float) -> float:
@@ -178,6 +194,8 @@ class InsuranceCenterSimulation:
         """
         r = random.random()
         return a + (b - a) * r
+
+
 
     @staticmethod
     def discrete_uniform(a: int, b: int) -> int:
@@ -192,6 +210,8 @@ class InsuranceCenterSimulation:
                 print(r)
                 return inc
 
+
+
     def data_server_calculater(self, name: str):
         """
          This function is supposed to calculate area under each server busy time.
@@ -202,7 +222,9 @@ class InsuranceCenterSimulation:
                   '{} Server Status'.format(name)] * (self.clock - self.data['Last Time Server Status Changed'][name])
         self.data['Last Time Server Status Changed'][name] = self.clock
 
-    def data_queue_calculater(self, name: str, temp=0):
+
+
+    def data_queue_calculater(self, name: str):
         """
          This function is supposed to calculate area under each queue length curve,
          and also the maximum queue length.
@@ -213,15 +235,23 @@ class InsuranceCenterSimulation:
         self.data['Maximum Queue Length']['{}'.format(name)] = max(self.data['Maximum Queue Length']['{}'.format(name)],
                                                                    (self.state['{}'.format(name)]))
 
+
+
     def car_entry_event(self):
         self.data['Cars'][self.car[0]] = [self.clock, 0, 0, 1, 0,
                                           self.paired]  # Arrival time, Car Type, Has Complaint, Is Paired, Is complete case?, paired after calling pairing function?
 
-        if (self.clock >= 1440 * math.floor(self.clock / 1440)) and (
-                self.clock <= 1440 * math.floor(self.clock / 1440) + 600):
+        if (self.clock >= 1440 * math.floor(self.clock / 1440)) and (self.clock <= 1440 * math.floor(self.clock / 1440) + 600):
             self.paired = 0
             new_car = [self.car[0] + 1, 0]
-            event_time = self.clock + self.exponential(self.param["arrival_time"])
+            if (self.clock % 1440) <= 120:
+                event_time = self.clock + self.exponential(arrival_rate_df.iloc[self.day_state, 1])
+            elif (self.clock % 1440 > 120) and (self.clock % 1440 <= 300):
+                event_time = self.clock + self.exponential(arrival_rate_df.iloc[self.day_state, 2])
+            elif (self.clock % 1440 > 300) and (self.clock % 1440 <= 420):
+                event_time = self.clock + self.exponential(arrival_rate_df.iloc[self.day_state, 3])
+            else:
+                event_time = self.clock + self.exponential(arrival_rate_df.iloc[self.day_state, 4])
             new_event = {'Event Type': 'Car Entry Event', 'Event Time': event_time, 'Car': new_car}
             self.future_event_list.append(new_event)
 
@@ -293,6 +323,8 @@ class InsuranceCenterSimulation:
                     self.data['Queue Cars']['Outside the Area Queue'][self.car[0]] = [self.clock, 0]
                     self.data_queue_calculater('Outside the Area Queue')
 
+
+
     def pairing_Cars(self):
         self.paired = 1
         first_car_in_queue = min(self.data['Queue Cars']['Parking Lot Queue'],
@@ -324,6 +356,8 @@ class InsuranceCenterSimulation:
             self.state['Paired Car Queue'] += 2
             self.data['Queue Cars']['Paired Car Queue'][first_car_in_queue] = [self.clock, 0]
             self.data_queue_calculater('Paired Car Queue')
+
+
 
     def filing_entrance_event(self):
         if self.data['Cars'][self.car[0]][4] == 1:
@@ -467,6 +501,8 @@ class InsuranceCenterSimulation:
                                  'Car': [self.car[0], 1]}
                     self.future_event_list.append(new_event)
 
+
+
     def Assessment_entrance_event(self):
         if self.data['Cars'][self.car[0]][2] == 0:
             self.state['Filer Server Status'] -= 1
@@ -540,6 +576,8 @@ class InsuranceCenterSimulation:
                 new_event = {'Event Type': 'Filing Entrance Event', 'Event Time': event_time, 'Car': [self.car[0], 1]}
                 self.future_event_list.append(new_event)
 
+
+
     def complaint_entrance_event(self):
         self.data['Last Server Status']['Assesser'] = self.state['Assesser Server Status']
         self.data_server_calculater('Assesser')
@@ -584,13 +622,17 @@ class InsuranceCenterSimulation:
             new_event = {'Event Type': 'Assessment Entrance Event', 'Event Time': event_time, 'Car': [self.car[0], 1]}
             self.future_event_list.append(new_event)
 
+
+
     def check_day_state(self):
         day_number = math.floor(self.clock / 1440) + 1
-        probabilty_of_rain = random.random()
-        if probabilty_of_rain >= self.param["rain_probabilty"][day_number]:
-            self.param['arrival_time'] = 1.5
+        probability_of_rain = random.random()
+        if probability_of_rain >= rain_probability_df.iloc[day_number - 1, 1]:
+            self.day_state = 0 # Rainy
         else:
-            self.param['arrival_time'] = 2
+            self.day_state = 1 # Normal
+
+
 
     def exit_system(self):
         self.data['Last Server Status']['Filer'] = self.state['Filer Server Status']
@@ -633,6 +675,8 @@ class InsuranceCenterSimulation:
                              'Car': [first_car_in_queue, 1]}
                 self.future_event_list.append(new_event)
 
+
+
     def simulation(self, trace_creator=False) -> dict:
         """
         This function is meant to do the simulation by help of introduced events.
@@ -647,6 +691,8 @@ class InsuranceCenterSimulation:
                 self.current_event = self.sorted_fel[0]  # find imminent event
             except IndexError:
                 self.clock = 1440 * math.floor(self.clock / 1440) + 1440
+                self.check_day_state()
+
                 event_time = self.clock + self.exponential(self.param["arrival_time"])
                 if random.random() <= 0.3:
                     new_event = {'Event Type': 'Car Entry Event', 'Event Time': event_time, 'Car': [self.car[0] + 1, 0]}
@@ -696,6 +742,8 @@ class InsuranceCenterSimulation:
 
         return self.data, self.state, self.trace_list
 
+
+
     def trace_excel_maker(self):
         """
         This function is only meant to create a trace excel
@@ -712,7 +760,6 @@ class InsuranceCenterSimulation:
         trace.to_excel('C:/Users/Lenovo/Desktop/trace_dataframe.xlsx', engine='xlsxwriter')
 
 
-## %%
 ICS = InsuranceCenterSimulation(simulation_time=43300)
 data, state, tr = ICS.simulation(trace_creator=True)
 ICS.trace_excel_maker()
