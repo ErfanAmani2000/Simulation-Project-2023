@@ -1,10 +1,68 @@
 # Simulation Project 2023
-The auto insurance center is open every day from 8:00am to 6:00pm. The center's doors close at 6:00pm and only cars inside the center at that time will be served until the system is empty. If a queue forms outside after the center's closing time, it will disappear. Both the plaintiff and culprit cars must be present at the same time in order to check and take necessary measures. If the first car enters before the center closes, the second car can also enter after 6:00pm. The arrival distribution of visitors depends on snowfall, rain, and time period. Historical data shows that client arrival is distributed differently during the hours of 8am to 10am, 10am to 1pm, 1pm to 3pm, and 3pm to 6pm. The project's second phase will include an Excel file with the date and probability of rain during the simulation day.
 
-Once inside the insurance center, if the cars enter in pairs (culprit and plaintiff), they will immediately enter the queue for taking pictures if there is capacity. There are two photographers with available time to take pictures. Each pair of cars follows an exponential distribution with a mean of 6 minutes. The queue for the photo taking area has a maximum capacity of 40 cars (20 pairs of cars). If the queue is full, cars must wait outside the insurance area until there is capacity.
+## Overview
 
-Based on historical data, 30% of clients arrive at the insurance center alone and have to wait for the second car. If these clients are able to enter the photo queue inside the area, they will first be transferred to the waiting parking area. After the second car arrives and they are ready to enter the photo queue inside the area, these cars will have priority over the cars outside the photo area. If a single car enters the queue outside the area, it will remain there until the second car arrives. The waiting time for a single car follows an exponential distribution with a mean of 30 minutes.
+This project simulates the operations of an auto insurance center, which is open daily from 8:00 AM to 6:00 PM. The simulation models various processes, including client arrivals, service queues, and complaint handling. The project leverages historical data to represent visitor patterns influenced by weather conditions and periods accurately.
 
-The distance between each section is assumed to be insignificant. In the file preparation stage, there are 3 experts, each with a service time of triangular distribution with minimum, average, and maximum times of 5, 6, and 7 minutes, respectively. After the file preparation stage, cars arrive at the queue of experts where 2 experts serve with an exponential distribution with an average of 9 minutes. After the expert review stage, cars will either has complaint or not. If the cars do not wish to complain, they must return to the file creation section and complete the file. Cars that need to complete their case are given priority over new cases. The time to complete a case follows a probability distribution D1 based on historical data, where 10% of clients at this center wish to complain.
+## Simulation Details
 
-After the expert review stage, cars that intend to complain must go through the complaint registration section, where one complaint expert works there. The time to reach requests follows an exponential distribution with a mean of 15 minutes. After registering the complaint, the cars must go through the expert procedures again and then complete the file. The service in these two sections will not be different for clients who come from the registration section. Finally, after completing the file, the cars will leave the insurance center.
+### Operating Hours
+
+- **Opening Time**: 8:00 AM
+- **Closing Time**: 6:00 PM
+  - After 6:00 PM, only cars inside the center will be served until the system is empty. Queues forming outside after closing will disappear.
+  - Both the plaintiff and culprit cars must be present simultaneously to proceed. If the first car enters before closing, the second car can enter after 6:00 PM.
+
+### Visitor Arrival Patterns
+
+- Arrival distributions vary based on weather conditions (snowfall, rain) and specific periods:
+  - 8:00 AM to 10:00 AM
+  - 10:00 AM to 1:00 PM
+  - 1:00 PM to 3:00 PM
+  - 3:00 PM to 6:00 PM
+- Phase two of the project will include an Excel file with dates and probabilities of rain.
+
+### Service Process
+
+1. **Photo Taking**
+   - Cars enter in pairs (plaintiff and culprit) and queue for photos if there is capacity.
+   - Two photographers are available, each serving pairs of cars with an exponential distribution (mean = 6 minutes).
+   - The photo queue can hold a maximum of 40 cars (20 pairs).
+   - If the queue is full, cars wait outside until space is available.
+
+2. **Single Car Handling**
+   - 30% of clients arrive alone and wait for the second car.
+   - Single cars in the photo queue inside the area are moved to the waiting parking area until paired.
+   - Priority is given to paired cars over those waiting outside.
+   - Waiting time for single cars follows an exponential distribution (mean = 30 minutes).
+
+3. **File Preparation**
+   - Three experts prepare files with a service time following a triangular distribution (min = 5, avg = 6, max = 7 minutes).
+
+4. **Expert Review**
+   - After file preparation, cars enter the expert queue where two experts serve with an exponential distribution (mean = 9 minutes).
+   - After the review, cars either proceed to file completion or to the complaint registration.
+   - 10% of clients wish to complain, based on historical data.
+
+5. **Complaint Handling**
+   - Cars with complaints go to the complaint registration section, served by one complaint expert (exponential distribution, mean = 15 minutes).
+   - After registering the complaint, cars repeat the expert procedures and complete the file.
+   - Priority is given to cars completing their cases over new cases.
+
+### Assumptions
+
+- Distances between sections are insignificant.
+
+## Installation
+
+1. **Clone the repository**:
+    ```bash
+    git clone https://github.com/YourUsername/InsuranceCenterSimulation.git
+    cd InsuranceCenterSimulation
+    ```
+
+2. **Create a virtual environment (optional but recommended)**:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
